@@ -133,7 +133,7 @@ Since PyTorch does not natively support this sort of quantization, the correspon
 If everything goes well, you should see some massive savings in memory:
 
 ```bash
-python3 -m solution.stats bignet low_precision
+python3 -m homework.stats bignet low_precision
 ```
 
 This should lead to an almost 7x reduction in memory. Think about why not 8x (float32: 32 bits -> 4 bits)?
