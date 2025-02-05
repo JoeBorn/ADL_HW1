@@ -3,8 +3,9 @@ import math
 
 import torch
 
-from .bignet import BIGNET_DIM, LayerNorm  # noqa: F401
+from .bignet import  LayerNorm, BIGNET_DIM #noqa: F401
 from .half_precision import HalfLinear
+
 
 
 class LoRALinear(HalfLinear):
@@ -105,7 +106,7 @@ class LoraBigNet(torch.nn.Module):
 
 def load(path: Path | None) -> LoraBigNet:
     # Since we have additional layers, we need to set strict=False in load_state_dict
-    net = LoraBigNet(lora_dim=16)
+    net = LoraBigNet(lora_dim=8)
     if path is not None:
         net.load_state_dict(torch.load(path, weights_only=True), strict=False)
     return net

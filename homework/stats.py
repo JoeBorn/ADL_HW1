@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
+import time
 
 import torch
 
@@ -96,6 +97,12 @@ class ModelStats:
 
     backward_memory: float
     "Memory usage of the backward pass in MB"
+    
+    forward_time: float
+    "Time taken for forward pass in ms"
+    
+    backward_time: float
+    "Time taken for backward pass in ms"
 
     @classmethod
     def from_model(cls, m: torch.nn.Module):
@@ -118,12 +125,18 @@ class ModelStats:
 
         x = torch.randn(1024, bignet.BIGNET_DIM).to(device)
 
+        # Time forward pass
         with memory_profile(device) as mem_forward:
+            start_time = time.time()
             with torch.no_grad():
                 m(x)
+            forward_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
+        # Time backward pass
         with memory_profile(device) as mem_backward:
+            start_time = time.time()
             m(x).mean().backward()
+            backward_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
         if device == "mps":
             torch.mps.empty_cache()
@@ -136,8 +149,9 @@ class ModelStats:
             actual_memory=int(mem_model) / 2**20,
             forward_memory=int(mem_forward) / 2**20,
             backward_memory=int(mem_backward) / 2**20,
+            forward_time=forward_time,
+            backward_time=backward_time,
         )
-
 
 def model_info(model_name1: str, *model_name2: str):
     """
@@ -160,6 +174,8 @@ def model_info(model_name1: str, *model_name2: str):
     print("Actual memory       ", " ".join([f"  {m.actual_memory:8.2f} MB " for m in stats.values()]))
     print("Forward memory      ", " ".join([f"  {m.forward_memory:8.2f} MB " for m in stats.values()]))
     print("Backward memory     ", " ".join([f"  {m.backward_memory:8.2f} MB " for m in stats.values()]))
+    print("Forward time        ", " ".join([f"  {m.forward_time:8.2f} ms " for m in stats.values()]))
+    print("Backward time       ", " ".join([f"  {m.backward_time:8.2f} ms " for m in stats.values()]))
 
 
 if __name__ == "__main__":
